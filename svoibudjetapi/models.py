@@ -36,7 +36,7 @@ class Shop(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Shop(name={self.name},inn={self.inn})>'
 
 
@@ -47,7 +47,7 @@ class Category(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Category(name={self.name})>'
 
 
@@ -63,7 +63,7 @@ class Product(Model):
         db.UniqueConstraint('name', 'shop_id'),
     )
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Product(name={self.name}, shop_id={self.shop_id})>'
 
 
@@ -77,7 +77,7 @@ class Check(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Check(shop_id={self.shop_id}, date={self.date})>'
 
 
@@ -91,7 +91,7 @@ class Item(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Item(check_id={self.check_id}, product_id={self.product_id})>'
 
 
@@ -103,5 +103,5 @@ class QRData(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
-    def __str__(self):
+    def __repr__(self):
         return f'<QRData(qr_string={self.qr_string})>'
