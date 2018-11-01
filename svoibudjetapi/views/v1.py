@@ -6,6 +6,7 @@ from flask import (
 
 from svoibudjetapi import app
 from svoibudjetapi.models import Check
+from svoibudjetapi.support import IncludesAttachService
 
 
 @app.route('/v1/checks', methods=['GET'])
@@ -16,8 +17,14 @@ def get_checks():
 
     data = {
         'total_count': queryset.count(),
-        'data': [c.serialized_() for c in queryset[offset:offset + limit]],
+        'items': [],
     }
+
+    for check in queryset[offset:offset + limit]:
+        serialized = check.serialized_()
+        IncludesAttachService(request.args.get('include', '')).attach_includes(serialized, check)
+
+        data['items'].append(serialized)
 
     return jsonify(data)
 

@@ -36,6 +36,8 @@ class Shop(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
+    checks = db.relationship('Check', back_populates='shop')
+
     def __str__(self):
         return f'<Shop(name={self.name},inn={self.inn})>'
 
@@ -76,6 +78,8 @@ class Check(Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id', ondelete='CASCADE'))
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    shop = db.relationship('Shop', back_populates='checks', lazy=True)
 
     def __str__(self):
         return f'<Check(shop_id={self.shop_id}, date={self.date})>'
