@@ -16,7 +16,7 @@ def get_checks():
 
     data = {
         'total_count': queryset.count(),
-        'items': [c.serialized_() for c in queryset[offset:offset + limit]],
+        'items': [c.to_dict() for c in queryset[offset:offset + limit]],
     }
 
     return jsonify(data)
@@ -28,4 +28,4 @@ def get_check(id_: int):
     if check is None:
         return abort(404)
 
-    return jsonify(check.serialized_())
+    return jsonify(check.to_dict())

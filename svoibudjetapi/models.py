@@ -6,15 +6,12 @@ from svoibudjetapi import db
 class Model(db.Model):
     __abstract__ = True
 
-    def __to_json(self, val):
-        if isinstance(val, (str, int, float)):
-            return val
-
-        elif isinstance(val, (list, set, tuple)):
-            return type(val)(self.__to_json(v) for v in val)
+    def __serialize(self, val):
+        if isinstance(val, (list, set, tuple)):
+            return type(val)(self.__serialize(v) for v in val)
 
         elif isinstance(val, dict):
-            return {k: self.__to_json(v) for k, v in val.items()}
+            return {k: self.__serialize(v) for k, v in val.items()}
 
         elif isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
             return str(val)
@@ -24,9 +21,8 @@ class Model(db.Model):
 
         return val
 
-    def serialized_(self):
-
-        return {k: self.__to_json(v) for k, v in vars(self).items() if '_' != k[:1]}
+    def to_dict(self):
+        return {k: self.__serialize(v) for k, v in vars(self).items() if '_' != k[:1]}
 
 
 class Shop(Model):
