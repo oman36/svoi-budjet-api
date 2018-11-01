@@ -16,7 +16,7 @@ def get_checks():
 
     data = {
         'total_count': queryset.count(),
-        'data': [c.serialized_() for c in queryset[offset:offset + limit]],
+        'items': [c.serialized_() for c in queryset[offset:offset + limit]],
     }
 
     return jsonify(data)
