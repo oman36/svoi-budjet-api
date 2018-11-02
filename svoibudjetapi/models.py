@@ -26,6 +26,8 @@ class Model(db.Model):
 
 
 class Shop(Model):
+    __tablename__ = 'shops'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     inn = db.Column(db.BigInteger, unique=True)
@@ -40,9 +42,11 @@ class Shop(Model):
 
 
 class Category(Model):
+    __tablename__ = 'categories'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    parent_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='SET NULL'), nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
@@ -51,10 +55,12 @@ class Category(Model):
 
 
 class Product(Model):
+    __tablename__ = 'products'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id', ondelete='CASCADE'))
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='SET NULL'), nullable=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'))
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
@@ -70,12 +76,14 @@ class Product(Model):
 
 
 class Check(Model):
+    __tablename__ = 'checks'
+
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime, unique=True)
     discount = db.Column(db.Numeric(10, 2), default=0)
     discount_sum = db.Column(db.Numeric(10, 2), default=0)
     total_sum = db.Column(db.Numeric(10, 2))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id', ondelete='CASCADE'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'))
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
@@ -87,9 +95,11 @@ class Check(Model):
 
 
 class Item(Model):
+    __tablename__ = 'items'
+
     id = db.Column(db.Integer, primary_key=True)
-    check_id = db.Column(db.Integer, db.ForeignKey('check.id', ondelete='CASCADE'))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id', ondelete='CASCADE'))
+    check_id = db.Column(db.Integer, db.ForeignKey('checks.id', ondelete='CASCADE'))
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='CASCADE'))
     price = db.Column(db.Numeric(10, 2))
     quantity = db.Column(db.Numeric(12, 4))
     sum = db.Column(db.Numeric(10, 2))
@@ -103,13 +113,15 @@ class Item(Model):
         return f'<Item(check_id={self.check_id}, product_id={self.product_id})>'
 
 
-class QRData(Model):
+class QRString(Model):
+    __tablename__ = 'qr_strings'
+
     id = db.Column(db.Integer, primary_key=True)
-    check_id = db.Column(db.Integer, db.ForeignKey('check.id', ondelete='SET NULL'), nullable=True)
+    check_id = db.Column(db.Integer, db.ForeignKey('checks.id', ondelete='SET NULL'), nullable=True)
     qr_string = db.Column(db.String(255), unique=True)
     is_valid = db.Column(db.Boolean, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     def __repr__(self):
-        return f'<QRData(qr_string="{self.qr_string}")>'
+        return f'<QRString(qr_string="{self.qr_string}")>'
