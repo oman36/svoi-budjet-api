@@ -32,6 +32,9 @@ class Shop(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
+    products = db.relationship('Product', back_populates='shop')
+    checks = db.relationship('Check', back_populates='shop')
+
     def __repr__(self):
         return f'<Shop(name={self.name},inn={self.inn})>'
 
@@ -59,6 +62,9 @@ class Product(Model):
         db.UniqueConstraint('name', 'shop_id'),
     )
 
+    shop = db.relationship('Shop', back_populates='products')
+    items = db.relationship('Item', back_populates='product')
+
     def __repr__(self):
         return f'<Product(name={self.name}, shop_id={self.shop_id})>'
 
@@ -73,6 +79,9 @@ class Check(Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
+    shop = db.relationship('Shop', back_populates='checks')
+    items = db.relationship('Item', back_populates='check')
+
     def __repr__(self):
         return f'<Check(shop_id={self.shop_id}, date={self.date})>'
 
@@ -86,6 +95,9 @@ class Item(Model):
     sum = db.Column(db.Numeric(10, 2))
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    check = db.relationship('Check', back_populates='items')
+    product = db.relationship('Product', back_populates='items')
 
     def __repr__(self):
         return f'<Item(check_id={self.check_id}, product_id={self.product_id})>'
