@@ -6,7 +6,7 @@ from flask import (
 
 from svoibudjetapi import app
 from svoibudjetapi.models import Check
-from svoibudjetapi.support import generate_joins
+from svoibudjetapi.support import generate_joins, get_eval_sort_by_rule
 
 
 @app.route('/v1/checks', methods=['GET'])
@@ -14,6 +14,15 @@ def get_checks():
     queryset = Check.query.options(*generate_joins(request.args.get('include', ''), Check))
     offset = request.args.get('offset', 0, int)
     limit = request.args.get('limit', 10, int)
+
+    if 'sort_by' in request.args:
+        try:
+            sort_by_rule = get_eval_sort_by_rule(request.args['sort_by'], Check)
+        except AttributeError:
+            return jsonify({
+                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.'
+            }), 400
+        queryset = queryset.order_by(sort_by_rule)
 
     data = {
         'total_count': queryset.count(),
