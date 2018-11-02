@@ -36,7 +36,7 @@ class Shop(Model):
     checks = db.relationship('Check', back_populates='shop')
 
     def __repr__(self):
-        return f'<Shop(name={self.name},inn={self.inn})>'
+        return f'<Shop(name="{self.name}",inn={self.inn})>'
 
 
 class Category(Model):
@@ -47,7 +47,7 @@ class Category(Model):
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     def __repr__(self):
-        return f'<Category(name={self.name})>'
+        return f'<Category(name="{self.name}")>'
 
 
 class Product(Model):
@@ -66,7 +66,7 @@ class Product(Model):
     items = db.relationship('Item', back_populates='product')
 
     def __repr__(self):
-        return f'<Product(name={self.name}, shop_id={self.shop_id})>'
+        return f'<Product(name="{self.name}", shop_id={self.shop_id})>'
 
 
 class Check(Model):
@@ -83,7 +83,7 @@ class Check(Model):
     items = db.relationship('Item', back_populates='check')
 
     def __repr__(self):
-        return f'<Check(shop_id={self.shop_id}, date={self.date})>'
+        return f'<Check(shop_id={self.shop_id}, date="{self.date}")>'
 
 
 class Item(Model):
@@ -112,4 +112,4 @@ class QRData(Model):
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     def __repr__(self):
-        return f'<QRData(qr_string={self.qr_string})>'
+        return f'<QRData(qr_string="{self.qr_string}")>'
