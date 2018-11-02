@@ -1,3 +1,9 @@
-from . import checks
+from . import (
+    checks,
+    qr_strings,
+)
 
-__all__ = ['checks']
+__all__ = [
+    'checks',
+    'qr_strings',
+]

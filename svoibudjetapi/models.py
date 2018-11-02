@@ -89,6 +89,7 @@ class Check(Model):
 
     shop = db.relationship('Shop', back_populates='checks')
     items = db.relationship('Item', back_populates='check')
+    qr_string = db.relationship('QRString', back_populates='check')
 
     def __repr__(self):
         return f'<Check(shop_id={self.shop_id}, date="{self.date}")>'
@@ -122,6 +123,8 @@ class QRString(Model):
     is_valid = db.Column(db.Boolean, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    check = db.relationship('Check', back_populates='qr_string')
 
     def __repr__(self):
         return f'<QRString(qr_string="{self.qr_string}")>'
