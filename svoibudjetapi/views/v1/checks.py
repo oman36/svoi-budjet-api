@@ -5,7 +5,7 @@ from flask import (
 )
 
 from svoibudjetapi import app
-from svoibudjetapi.models import Check
+from svoibudjetapi.models import Check, Item
 from svoibudjetapi.support import generate_joins, get_eval_sort_by_rule
 
 
@@ -40,3 +40,20 @@ def get_check(id_: int):
         return abort(404)
 
     return jsonify(check)
+
+
+@app.route('/v1/checks/<int:id_>/items', methods=['GET'])
+def get_check_items(id_: int):
+    if Check.query.filter_by(id=id_).count() == 0:
+        return abort(404)
+
+    offset = request.args.get('offset', 0, int)
+    limit = request.args.get('limit', 100, int)
+
+    queryset = Item.query.filter_by(check_id=id_)\
+        .options(*generate_joins(request.args.get('include', ''), Item))
+
+    return jsonify({
+        'count': queryset.count(),
+        'items': queryset[offset:limit + offset],
+    })
