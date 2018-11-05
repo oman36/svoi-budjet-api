@@ -53,7 +53,17 @@ def get_check_items(id_: int):
     queryset = Item.query.filter_by(check_id=id_)\
         .options(*generate_joins(request.args.get('include', ''), Item))
 
+    if 'sort_by' in request.args:
+        try:
+            sort_by_rule = get_eval_sort_by_rule(request.args['sort_by'], Item)
+        except AttributeError:
+            return jsonify({
+                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.'
+            }), 400
+
+        queryset = queryset.order_by(sort_by_rule)
+
     return jsonify({
-        'count': queryset.count(),
+        'total_count': queryset.count(),
         'items': queryset[offset:limit + offset],
     })
