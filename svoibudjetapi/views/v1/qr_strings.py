@@ -14,6 +14,7 @@ from svoibudjetapi.models import QRString
 from svoibudjetapi.support import (
     generate_joins,
     get_eval_sort_by_rule,
+    validator,
 )
 
 
@@ -97,4 +98,64 @@ def post_qr_strings():
 
     model = QRString(qr_string=qr_string)
     db.session.add(model)
+    db.session.commit()
+
     return jsonify(model), 201
+
+
+@app.route('/v1/qr_strings/<int:id_>', methods=['PATCH'])
+def patch_qr_string(id_):
+    model = QRString.query.get(id_)
+
+    if model is None:
+        abort(404)
+
+    try:
+        patch_json = request.get_json()
+    except ValueError:
+        return jsonify({
+            'message': 'Invalid json format.'
+        }), 400
+
+    if not isinstance(patch_json, dict):
+        return jsonify({
+            'message': 'Json must be object.'
+        }), 400
+
+    patch_json = {k: v for k, v in patch_json.items() if k not in ('created_at', 'updated_at')}
+
+    try:
+        validator.is_valid_model_dict(patch_json, QRString)
+    except validator.ValidatorBaseException as e:
+        return jsonify({
+            'message': str(e)
+        }), 400
+
+    if 'qr_string' in patch_json:
+        if QRString.query.filter(
+            QRString.qr_string == patch_json['qr_string'],
+            QRString.id != id_,
+        ).first() is not None:
+            return jsonify({
+                'message': f'qr_string="{patch_json["qr_string"]}" already exists.'
+            }), 409
+
+    for field, value in patch_json.items():
+        setattr(model, field, value)
+
+    db.session.commit()
+
+    return jsonify(model), 200
+
+
+@app.route('/v1/qr_strings/<int:id_>', methods=['DELETE'])
+def delete_qr_string(id_):
+    model = QRString.query.get(id_)
+
+    if model is None:
+        abort(404)
+
+    db.session.delete(model)
+    db.session.commit()
+
+    return jsonify({}), 200
