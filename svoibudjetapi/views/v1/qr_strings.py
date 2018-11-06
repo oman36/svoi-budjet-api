@@ -59,11 +59,11 @@ def get_qr_strings():
 @app.route('/v1/qr_strings/<int:id_>', methods=['GET'])
 def get_qr_string(id_: int):
     queryset = QRString.query.options(*generate_joins(request.args.get('include', ''), QRString))
-    check = queryset.get(id_)
-    if check is None:
+    model = queryset.get(id_)
+    if model is None:
         return abort(404)
 
-    return jsonify(check)
+    return jsonify(model)
 
 
 @app.route('/v1/qr_strings', methods=['POST'])
@@ -89,8 +89,12 @@ def post_qr_strings():
             'message': e.__str__()
         }), 400
 
+    model = QRString.query.filter(QRString.qr_string == qr_string).first()
+    if model is not None:
+        return jsonify({
+            'message': f'qr_string="{qr_string}" already exists'
+        }), 409
+
     model = QRString(qr_string=qr_string)
     db.session.add(model)
-    db.session.commit()
-
     return jsonify(model), 201
