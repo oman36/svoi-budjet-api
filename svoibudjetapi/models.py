@@ -22,17 +22,27 @@ class Model(db.Model):
         return val
 
     def to_dict(self):
+
+        # hack for loading data
+        if self._sa_instance_state.expired:
+            getattr(self, next(self._sa_instance_state.expired_attributes.__iter__()))
+
         return {k: self.__serialize(v) for k, v in vars(self).items() if '_' != k[:1]}
 
 
-class Shop(Model):
+class Timestamps:
+    def __init__(self, *args, **kwargs):
+        pass
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now, nullable=False)
+
+
+class Shop(Model, Timestamps):
     __tablename__ = 'shops'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     inn = db.Column(db.BigInteger, unique=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     products = db.relationship('Product', back_populates='shop')
     checks = db.relationship('Check', back_populates='shop')
@@ -41,28 +51,24 @@ class Shop(Model):
         return f'<Shop(name="{self.name}",inn={self.inn})>'
 
 
-class Category(Model):
+class Category(Model, Timestamps):
     __tablename__ = 'categories'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
+    name = db.Column(db.String(100), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     def __repr__(self):
         return f'<Category(name="{self.name}")>'
 
 
-class Product(Model):
+class Product(Model, Timestamps):
     __tablename__ = 'products'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'))
+    name = db.Column(db.String(255), nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     __table_args__ = (
         db.UniqueConstraint('name', 'shop_id'),
@@ -75,17 +81,15 @@ class Product(Model):
         return f'<Product(name="{self.name}", shop_id={self.shop_id})>'
 
 
-class Check(Model):
+class Check(Model, Timestamps):
     __tablename__ = 'checks'
 
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, unique=True)
-    discount = db.Column(db.Numeric(10, 2), default=0)
-    discount_sum = db.Column(db.Numeric(10, 2), default=0)
-    total_sum = db.Column(db.Numeric(10, 2))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    date = db.Column(db.DateTime, unique=True, nullable=False)
+    discount = db.Column(db.Numeric(10, 2), default=0, nullable=False)
+    discount_sum = db.Column(db.Numeric(10, 2), default=0, nullable=False)
+    total_sum = db.Column(db.Numeric(10, 2), nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'), nullable=False)
 
     shop = db.relationship('Shop', back_populates='checks')
     items = db.relationship('Item', back_populates='check')
@@ -94,17 +98,15 @@ class Check(Model):
         return f'<Check(shop_id={self.shop_id}, date="{self.date}")>'
 
 
-class Item(Model):
+class Item(Model, Timestamps):
     __tablename__ = 'items'
 
     id = db.Column(db.Integer, primary_key=True)
-    check_id = db.Column(db.Integer, db.ForeignKey('checks.id', ondelete='CASCADE'))
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='CASCADE'))
-    price = db.Column(db.Numeric(10, 2))
-    quantity = db.Column(db.Numeric(12, 4))
-    sum = db.Column(db.Numeric(10, 2))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    check_id = db.Column(db.Integer, db.ForeignKey('checks.id', ondelete='CASCADE'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='CASCADE'), nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    quantity = db.Column(db.Numeric(12, 4), nullable=False)
+    sum = db.Column(db.Numeric(10, 2), nullable=False)
 
     check = db.relationship('Check', back_populates='items')
     product = db.relationship('Product', back_populates='items')
@@ -113,15 +115,13 @@ class Item(Model):
         return f'<Item(check_id={self.check_id}, product_id={self.product_id})>'
 
 
-class QRString(Model):
+class QRString(Model, Timestamps):
     __tablename__ = 'qr_strings'
 
     id = db.Column(db.Integer, primary_key=True)
     check_id = db.Column(db.Integer, db.ForeignKey('checks.id', ondelete='SET NULL'), nullable=True)
-    qr_string = db.Column(db.String(255), unique=True)
+    qr_string = db.Column(db.String(255), unique=True, nullable=False)
     is_valid = db.Column(db.Boolean, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     def __repr__(self):
         return f'<QRString(qr_string="{self.qr_string}")>'
