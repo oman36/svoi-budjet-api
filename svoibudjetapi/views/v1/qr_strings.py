@@ -4,9 +4,17 @@ from flask import (
     abort,
 )
 
-from svoibudjetapi import app
+from proverkacheka.api import API
+from proverkacheka.exceptions import InvalidQueryStringException
+from svoibudjetapi import (
+    app,
+    db,
+)
 from svoibudjetapi.models import QRString
-from svoibudjetapi.support import generate_joins, get_eval_sort_by_rule
+from svoibudjetapi.support import (
+    generate_joins,
+    get_eval_sort_by_rule,
+)
 
 
 @app.route('/v1/qr_strings', methods=['GET'])
@@ -56,3 +64,33 @@ def get_qr_string(id_: int):
         return abort(404)
 
     return jsonify(check)
+
+
+@app.route('/v1/qr_strings', methods=['POST'])
+def post_qr_strings():
+    try:
+        post_json = request.get_json()
+    except ValueError:
+        return jsonify({
+            'message': 'Invalid json format'
+        }), 400
+
+    qr_string = (post_json.get('qr_string') if isinstance(post_json, dict) else '').strip()
+
+    if '' == qr_string:
+        return jsonify({
+            'message': 'qr_string is required.'
+        }), 400
+
+    try:
+        API().is_valid_query_string(qr_string, silent=False)
+    except InvalidQueryStringException as e:
+        return jsonify({
+            'message': e.__str__()
+        }), 400
+
+    model = QRString(qr_string=qr_string)
+    db.session.add(model)
+    db.session.commit()
+
+    return jsonify(model), 201
