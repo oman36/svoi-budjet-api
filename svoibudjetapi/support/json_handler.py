@@ -1,5 +1,5 @@
 import datetime
-import hashlib
+import decimal
 import json
 import os
 import re
@@ -8,9 +8,9 @@ from svoibudjetapi import app, db
 from svoibudjetapi.models import Check, Shop, Item, Product
 
 
-def save_check_json(json_string: str):
+def save_check_json(json_string: str, qr_string_id: int):
     json_files_path = app.config['JSON_FILES_DIR']
-    filename = hashlib.md5(json_string).hexdigets() + '.json'
+    filename = f'{qr_string_id}.json'
 
     if not os.path.isdir(json_files_path):
         os.makedirs(json_files_path)
@@ -21,18 +21,20 @@ def save_check_json(json_string: str):
 
 def save_check_from_json(json_string: str):
     data = json.loads(json_string)
+    if 'document' in data:
+        data = data['document']['receipt']
 
     if isinstance(data['dateTime'], int) or re.match('^\d+$', data['dateTime']):
         date = datetime.datetime.fromtimestamp(data['dateTime']).isoformat()
     else:
         date = data['dateTime']
 
-    check = Check.objects.filter(Check.date == date).first()
+    check = Check.query.filter(Check.date == date).first()
 
-    if Check.objects.filter(date=date).first():
+    if check is not None:
         return check
 
-    shop = Shop.objects.filter(Shop.inn == data['userInn']).first()
+    shop = Shop.query.filter(Shop.inn == data['userInn']).first()
 
     if shop is None:
         shop = Shop(inn=data['userInn'], name=data.get('user', 'unknown'))
@@ -57,18 +59,21 @@ def save_item(check, item_data):
     item_data['name'] = item_data.get('name')
 
     if item_data['name'] is None:
-        item_data['name'] = 'unknown_%d' % (
-            Product.objects.filter(Product.shop == check.shop).count() + 1
+        item_data['name'] = 'unknown_{}'.format(
+            Product.query.filter(Product.shop == check.shop).count() + 1
         )
         product = None
     else:
-        product = Product.objects.filter(name=item_data['name'], shop=check.shop).first()
+        product = Product.query.filter(
+            Product.name == item_data['name'],
+            Product.shop == check.shop,
+        ).first()
 
     if product is None:
         product = Product(shop=check.shop, name=item_data['name'])
 
     item = Item(
-        check_model=check,
+        check=check,
         product=product,
         price=item_data['price'] / 100,
         quantity=item_data['quantity'],

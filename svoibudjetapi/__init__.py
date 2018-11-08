@@ -7,7 +7,8 @@ from svoibudjetapi.support import CustomJSONEncoder
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['ROOT_DIR'] = script_path = os.path.dirname(os.path.abspath(__file__))
+app.config['ROOT_DIR'] = os.path.dirname(os.path.abspath(__file__))
+app.config['LOG_DIR'] = os.environ.get('LOG_DIR', os.path.join(app.config['ROOT_DIR'], 'logs'))
 app.config['PROVERKACHEKA_USER'] = os.environ.get('PROVERKACHEKA_USER')
 app.config['PROVERKACHEKA_PASS'] = os.environ.get('PROVERKACHEKA_PASS')
 app.config['JSON_FILES_DIR'] = os.environ.get('JSON_FILES_DIR', app.config['ROOT_DIR'])
