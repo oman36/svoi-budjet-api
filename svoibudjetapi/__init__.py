@@ -12,6 +12,7 @@ app.config['LOG_DIR'] = os.environ.get('LOG_DIR', os.path.join(app.config['ROOT_
 app.config['PROVERKACHEKA_USER'] = os.environ.get('PROVERKACHEKA_USER')
 app.config['PROVERKACHEKA_PASS'] = os.environ.get('PROVERKACHEKA_PASS')
 app.config['JSON_FILES_DIR'] = os.environ.get('JSON_FILES_DIR', app.config['ROOT_DIR'])
+app.config['DADATA_KEY'] = os.environ.get('DADATA_KEY')
 app.json_encoder = CustomJSONEncoder
 
 db = SQLAlchemy(app)

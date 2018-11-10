@@ -1,7 +1,9 @@
 from . import (
-    fetch_json
+    dadata,
+    fetch_json,
 )
 
 __all__ = [
+    'dadata',
     'fetch_json',
 ]
