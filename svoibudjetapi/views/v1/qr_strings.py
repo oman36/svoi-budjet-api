@@ -1,11 +1,14 @@
+import os
+
 from flask import (
     jsonify,
     request,
     abort,
+    send_file,
 )
-
 from proverkacheka.api import API
 from proverkacheka.exceptions import InvalidQueryStringException
+
 from svoibudjetapi import (
     app,
     db,
@@ -15,6 +18,7 @@ from svoibudjetapi.support import (
     generate_joins,
     get_eval_sort_by_rule,
     validator,
+    qr_string_images,
 )
 
 
@@ -159,3 +163,93 @@ def delete_qr_string(id_):
     db.session.commit()
 
     return jsonify({}), 200
+
+
+@app.route('/v1/qr_strings/<int:id_>/images', methods=['GET'])
+def get_qr_string_images(id_: int):
+    queryset = QRString.query.options(*generate_joins(request.args.get('include', ''), QRString))
+    model = queryset.get(id_)
+    if model is None:
+        return abort(404)
+
+    result = {'items': []}
+    for uri in qr_string_images.get_links(id_):
+        result['items'].append({
+            'link': f'{request.host_url}{uri}',
+        })
+
+    result['total_count'] = len(result['items'])
+    return jsonify(result)
+
+
+@app.route('/v1/qr_strings/<int:id_>/images', methods=['DELETE'])
+def delete_qr_string_images(id_: int):
+    path = qr_string_images.get_path(id_)
+    if not os.path.isdir(path):
+        return abort(404)
+
+    try:
+        for file_name in qr_string_images.get_file_names(id_):
+            os.unlink(qr_string_images.get_path(id_, file_name))
+    except OSError:
+        return jsonify({
+            'message': 'Server error',
+        }), 500
+
+    return jsonify({})
+
+
+@app.route('/v1/qr_strings/<int:id_>/images', methods=['POST'])
+def post_qr_string_image(id_: int):
+    if len(request.files) == 0:
+        return jsonify({
+            'message': 'Files are required',
+        })
+
+    for file_storage in request.files.values():
+        if file_storage.mimetype not in qr_string_images.VALID_MIME:
+            return jsonify({
+                'message': f'{file_storage.mimetype} is invalid MIME type.'
+                           f' Allowed: {", ".join(qr_string_images.VALID_MIME)}'
+            }), 400
+
+    target_dir = qr_string_images.get_path(id_)
+    if not os.path.isdir(target_dir):
+        os.makedirs(target_dir)
+
+    result = {'items': []}
+    for name, file_storage in request.files.items():
+        file_name = qr_string_images.generate_file_name(id_, file_storage)
+        file_storage.save(qr_string_images.get_path(id_, file_name))
+        result['items'].append({
+            'name': name,
+            'link': f'{request.host_url}{qr_string_images.get_link(id_, file_name)}',
+        })
+
+    return jsonify(result), 201
+
+
+@app.route('/v1/qr_strings/<int:id_>/images/<string:filename>', methods=['GET'])
+def get_qr_string_image(id_: int, filename: str):
+    path = qr_string_images.get_path(id_, filename)
+
+    if not os.path.isfile(path):
+        return abort(404)
+
+    return send_file(path)
+
+
+@app.route('/v1/qr_strings/<int:id_>/images/<string:file_name>', methods=['DELETE'])
+def delete_qr_string_image(id_: int, file_name: str):
+    path = qr_string_images.get_path(id_, file_name)
+    if not os.path.isfile(path):
+        return abort(404)
+
+    try:
+        os.unlink(path)
+    except OSError:
+        return jsonify({
+            'message': 'Server error',
+        }), 500
+
+    return jsonify({})

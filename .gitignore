@@ -4,3 +4,4 @@ venv
 .idea
 wsgi.py
 *.log
+svoibudjetapi/media
