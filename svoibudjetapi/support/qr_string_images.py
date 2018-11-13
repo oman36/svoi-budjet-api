@@ -21,7 +21,8 @@ def get_path(id_: int = None, file_name: str = None) -> str:
 
 
 def generate_file_name(id_: int, file) -> str:
-    next_name = max(int(s.split('.')[0]) for s in get_file_names(id_) or [0]) + 1
+    next_name = max([int(s.split('.')[0]) for s in get_file_names(id_)] or [0]) + 1
+
     if isinstance(file, FileStorage):
         extension = file.mimetype.split('/').pop()
     else:
