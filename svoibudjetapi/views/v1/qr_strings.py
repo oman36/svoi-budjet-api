@@ -25,7 +25,7 @@ from svoibudjetapi.support import (
 
 @wraps(app.route)
 def route(rule, **options):
-    return app.route('/api/v1/products' + rule, **options)
+    return app.route('/api/v1/qr_strings' + rule, **options)
 
 
 @route('', methods=['GET'])
