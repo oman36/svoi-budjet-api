@@ -52,7 +52,7 @@ def get_links(id_: int) -> [str]:
 
 
 def get_link(id_: int, file_name: str) -> str:
-    return f'v1/qr_strings/{id_}/images/{file_name}'
+    return f'api/v1/qr_strings/{id_}/images/{file_name}'
 
 
 def is_valid_mime(mime: str) -> bool:
