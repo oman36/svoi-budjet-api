@@ -1,3 +1,4 @@
+from functools import wraps
 import os
 
 from flask import (
@@ -22,7 +23,12 @@ from svoibudjetapi.support import (
 )
 
 
-@app.route('/v1/qr_strings', methods=['GET'])
+@wraps(app.route)
+def route(rule, **options):
+    return app.route('/api/v1/products' + rule, **options)
+
+
+@route('', methods=['GET'])
 def get_qr_strings():
     queryset = QRString.query.options(*generate_joins(request.args.get('include', ''), QRString))
     offset = request.args.get('offset', 0, int)
@@ -61,7 +67,7 @@ def get_qr_strings():
     return jsonify(data)
 
 
-@app.route('/v1/qr_strings/<int:id_>', methods=['GET'])
+@route('/<int:id_>', methods=['GET'])
 def get_qr_string(id_: int):
     queryset = QRString.query.options(*generate_joins(request.args.get('include', ''), QRString))
     model = queryset.get(id_)
@@ -71,7 +77,7 @@ def get_qr_string(id_: int):
     return jsonify(model)
 
 
-@app.route('/v1/qr_strings', methods=['POST'])
+@route('', methods=['POST'])
 def post_qr_strings():
     try:
         post_json = request.get_json()
@@ -107,7 +113,7 @@ def post_qr_strings():
     return jsonify(model), 201
 
 
-@app.route('/v1/qr_strings/<int:id_>', methods=['PATCH'])
+@route('/<int:id_>', methods=['PATCH'])
 def patch_qr_string(id_):
     model = QRString.query.get(id_)
 
@@ -152,7 +158,7 @@ def patch_qr_string(id_):
     return jsonify(model), 200
 
 
-@app.route('/v1/qr_strings/<int:id_>', methods=['DELETE'])
+@route('/<int:id_>', methods=['DELETE'])
 def delete_qr_string(id_):
     model = QRString.query.get(id_)
 
@@ -165,7 +171,7 @@ def delete_qr_string(id_):
     return jsonify({}), 200
 
 
-@app.route('/v1/qr_strings/<int:id_>/images', methods=['GET'])
+@route('/<int:id_>/images', methods=['GET'])
 def get_qr_string_images(id_: int):
     queryset = QRString.query.options(*generate_joins(request.args.get('include', ''), QRString))
     model = queryset.get(id_)
@@ -182,7 +188,7 @@ def get_qr_string_images(id_: int):
     return jsonify(result)
 
 
-@app.route('/v1/qr_strings/<int:id_>/images', methods=['DELETE'])
+@route('/<int:id_>/images', methods=['DELETE'])
 def delete_qr_string_images(id_: int):
     path = qr_string_images.get_path(id_)
     if not os.path.isdir(path):
@@ -199,12 +205,12 @@ def delete_qr_string_images(id_: int):
     return jsonify({})
 
 
-@app.route('/v1/qr_strings/<int:id_>/images', methods=['POST'])
+@route('/<int:id_>/images', methods=['POST'])
 def post_qr_string_image(id_: int):
     if len(request.files) == 0:
         return jsonify({
             'message': 'Files are required',
-        })
+        }), 400
 
     for file_storage in request.files.values():
         if file_storage.mimetype not in qr_string_images.VALID_MIME:
@@ -229,7 +235,7 @@ def post_qr_string_image(id_: int):
     return jsonify(result), 201
 
 
-@app.route('/v1/qr_strings/<int:id_>/images/<string:filename>', methods=['GET'])
+@route('/<int:id_>/images/<string:filename>', methods=['GET'])
 def get_qr_string_image(id_: int, filename: str):
     path = qr_string_images.get_path(id_, filename)
 
@@ -239,7 +245,7 @@ def get_qr_string_image(id_: int, filename: str):
     return send_file(path)
 
 
-@app.route('/v1/qr_strings/<int:id_>/images/<string:file_name>', methods=['DELETE'])
+@route('/<int:id_>/images/<string:file_name>', methods=['DELETE'])
 def delete_qr_string_image(id_: int, file_name: str):
     path = qr_string_images.get_path(id_, file_name)
     if not os.path.isfile(path):

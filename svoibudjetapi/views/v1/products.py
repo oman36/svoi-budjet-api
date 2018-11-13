@@ -1,9 +1,12 @@
+from functools import wraps
+
 from flask import (
     jsonify,
     request,
     abort,
 )
 from sqlalchemy import sql
+
 from svoibudjetapi import (
     app,
     db,
@@ -19,7 +22,12 @@ from svoibudjetapi.support import (
 )
 
 
-@app.route('/v1/products', methods=['GET'])
+@wraps(app.route)
+def route(rule, **options):
+    return app.route('/api/v1/products' + rule, **options)
+
+
+@route('', methods=['GET'])
 def get_products():
     queryset = Product.query.options(*generate_joins(request.args.get('include', ''), Product))
     offset = request.args.get('offset', 0, int)
@@ -63,7 +71,7 @@ def get_products():
     return jsonify(data)
 
 
-@app.route('/v1/products/<int:id_>/items', methods=['GET'])
+@route('/<int:id_>/items', methods=['GET'])
 def get_product_items(id_):
     if Product.query.filter_by(id=id_).count() == 0:
         return abort(404)

@@ -1,3 +1,5 @@
+from functools import wraps
+
 from flask import (
     jsonify,
     request,
@@ -9,7 +11,12 @@ from svoibudjetapi.models import Check, Item
 from svoibudjetapi.support import generate_joins, get_eval_sort_by_rule
 
 
-@app.route('/v1/checks', methods=['GET'])
+@wraps(app.route)
+def route(rule, **options):
+    return app.route('/api/v1/checks' + rule, **options)
+
+
+@route('', methods=['GET'])
 def get_checks():
     queryset = Check.query.options(*generate_joins(request.args.get('include', ''), Check))
     offset = request.args.get('offset', 0, int)
@@ -32,7 +39,7 @@ def get_checks():
     return jsonify(data)
 
 
-@app.route('/v1/checks/<int:id_>', methods=['GET'])
+@route('/<int:id_>', methods=['GET'])
 def get_check(id_: int):
     queryset = Check.query.options(*generate_joins(request.args.get('include', ''), Check))
     check = queryset.get(id_)
@@ -42,7 +49,7 @@ def get_check(id_: int):
     return jsonify(check)
 
 
-@app.route('/v1/checks/<int:id_>/items', methods=['GET'])
+@route('/<int:id_>/items', methods=['GET'])
 def get_check_items(id_: int):
     if Check.query.filter_by(id=id_).count() == 0:
         return abort(404)
