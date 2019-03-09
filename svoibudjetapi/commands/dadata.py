@@ -66,4 +66,4 @@ def dadata():
         except:
             logger.exception('')
 
-        time.sleep(app.config.DAEMON_SLEEP)
+        time.sleep(app.config['DAEMON_SLEEP'])
