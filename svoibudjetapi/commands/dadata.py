@@ -1,38 +1,46 @@
-import datetime
-import os
-import time
-import traceback
 import json
+import logging
+import time
+
 import requests
 
 from svoibudjetapi import app, db
 from svoibudjetapi.models import Shop
 
+logger = logging.getLogger(__name__)
+
+
+class _CompanyNameGetter:
+    URL = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party"
+
+    def __init__(self, key: str):
+        self.headers = {
+            "Authorization": f"Token {key}",
+            "Content-Type": "application/json",
+        }
+
+    def get_name(self, inn: str) -> str:
+        data = json.dumps({"query": inn, "count": 1})
+        response = requests.post(self.URL, data=data, headers=self.headers)
+        if response.status_code != 200:
+            logger.warn('Api returned status_code %d', response.status_code)
+
+        try:
+            r_data = response.json()
+            name = r_data['suggestions'][0]['value2']
+        except:
+            logger.warn('Api returned invalid format: %s', response.text)
+            raise
+        return name
+
 
 @app.cli.command()
 def dadata():
-    def log_exception():
-        if not os.path.isdir(app.config.get('LOG_DIR')):
-            os.makedirs(app.config.get('LOG_DIR'))
-
-        with open(os.path.join(app.config.get('LOG_DIR'), 'errors.log'), 'a+') as f:
-            f.write('-' * 20 + datetime.datetime.now().strftime(' %Y-%m-%d %H:%M:%S ') + '-' * 20 + '\n')
-            f.write(traceback.format_exc(20))
-
-    def getName(inn):
-        url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party"
-        headers = {
-            "Authorization": f"Token {app.config['DADATA_KEY']}",
-            "Content-Type": "application/json",
-        }
-        data = {"query": inn, "count": 1}
-
-        return requests.post(url, data=json.dumps(data), headers=headers)\
-            .json()['suggestions'][0]['value']
-
+    logger.debug('Start.')
     queryset = Shop.query.filter(Shop.name.in_(('unknown', '')))
-
+    api = _CompanyNameGetter(app.config['DADATA_KEY'])
     while True:
+        logger.debug('Iteration begin.')
         try:
             step_size = 5
             offset = 0
@@ -42,18 +50,20 @@ def dadata():
 
                 offset += step_size
 
+                logger.debug('Count of next shops : %d.', len(next_shops))
                 if len(next_shops) == 0:
                     break
 
                 for next_shop in next_shops:  # type:Shop
                     try:
-                        next_shop.name = getName(next_shop.inn)
+                        logger.debug('Getting name for %s id=%d', next_shop, next_shop.id)
+                        next_shop.name = api.get_name(next_shop.inn)
                     except:
-                        log_exception()
+                        logger.exception('get_name')
                         continue
 
                     db.session.commit()
         except:
-            log_exception()
+            logger.exception('')
 
-        time.sleep(5)
+        time.sleep(app.config.DAEMON_SLEEP)
