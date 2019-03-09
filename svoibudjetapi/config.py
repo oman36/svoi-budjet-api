@@ -10,7 +10,7 @@ JSON_FILES_DIR = os.environ.get('JSON_FILES_DIR', ROOT_DIR)
 if 'DADATA_KEY' in os.environ:
     DADATA_KEY = os.environ.get('DADATA_KEY')
 MEDIA_DIR = os.path.join(ROOT_DIR, 'media')
-DAEMON_SLEEP = 5,
+DAEMON_SLEEP = 5
 LOGGING = {
     'version': 1,
     'formatters': {
