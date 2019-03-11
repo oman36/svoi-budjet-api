@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 def fetch_json():
     logger.debug('Start.')
     api = API(
-        username=app.config.get('PROVERKACHECKA_USER'),
-        password=app.config.get('PROVERKACHECKA_PASS'),
+        username=app.config['PROVERKACHECKA_USER'],
+        password=app.config['PROVERKACHECKA_PASS'],
     )
     while True:
         logger.debug('Iteration begin.')
