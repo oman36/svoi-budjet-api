@@ -77,8 +77,3 @@ LOGGING = {
         'handlers': ['debug', 'info', 'warning', 'error', 'critical'],
     }
 }
-
-try:
-    from .env_config import *
-except ImportError:
-    pass
