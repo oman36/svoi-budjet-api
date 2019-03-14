@@ -2,6 +2,7 @@ import logging.config
 import os
 
 from flask import Flask
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 from svoibudjetapi.support import CustomJSONEncoder
@@ -29,6 +30,7 @@ for args in log_msgs:
     logger.log(*args)
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 import svoibudjetapi.views
 import svoibudjetapi.models
