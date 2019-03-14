@@ -125,6 +125,21 @@ class QRString(Model, Timestamps):
     is_valid = db.Column(db.Boolean, nullable=True)
 
     check = db.relationship('Check', back_populates='qr_string')
+    errors = db.relationship('QRStringError', back_populates='check')
 
     def __repr__(self):
         return f'<QRString(qr_string="{self.qr_string}")>'
+
+
+class QRStringError(Model):
+    __tablename__ = 'qr_strings_errors'
+
+    id = db.Column(db.Integer, primary_key=True)
+    qr_string_id = db.Column(db.Integer, db.ForeignKey('qr_strings.id', ondelete='CASCADE'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now, nullable=False)
+
+    check = db.relationship('QRString', back_populates='errors')
+
+    def __repr__(self):
+        return f'<QRStringError(qr_string_id={self.qr_string_id}, content="{self.content[:20]}...")>'
