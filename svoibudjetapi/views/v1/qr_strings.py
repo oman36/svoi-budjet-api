@@ -20,6 +20,7 @@ from svoibudjetapi.support import (
     get_eval_sort_by_rule,
     validator,
     qr_string_images,
+    http_errors_codes,
 )
 
 
@@ -44,7 +45,8 @@ def get_qr_strings():
                 is_valid = {'1': True, '0': False}[request.args[key]]
             except KeyError:
                 return jsonify({
-                    'message': f'Invalid value for "{key}". Must be 1 or 0.'
+                    'message': f'Invalid value for "{key}". Must be 1 or 0.',
+                    'code': http_errors_codes.INVALID_BOOL_VAL,
                 }), 400
 
             queryset = queryset.filter(callback(is_valid))
@@ -54,7 +56,8 @@ def get_qr_strings():
             sort_by_rule = get_eval_sort_by_rule(request.args['sort_by'], QRString)
         except AttributeError:
             return jsonify({
-                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.'
+                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.',
+                'code': http_errors_codes.INVALID_SORT_KEY,
             }), 400
 
         queryset = queryset.order_by(sort_by_rule)
@@ -83,27 +86,33 @@ def post_qr_strings():
         post_json = request.get_json()
     except ValueError:
         return jsonify({
-            'message': 'Invalid json format'
+            'message': 'Invalid json format',
+            'code': http_errors_codes.INVALID_JSON_FORMAT,
         }), 400
 
-    qr_string = (post_json.get('qr_string') if isinstance(post_json, dict) else '').strip()
+    qr_string = (post_json.get('qr_string', '') if isinstance(post_json, dict) else '').strip()
 
     if '' == qr_string:
         return jsonify({
-            'message': 'qr_string is required.'
+            'message': 'qr_string is required.',
+            'code': http_errors_codes.FIELDS_REQUIRED,
+            'fields': ['qr_string'],
         }), 400
 
     try:
         API().is_valid_query_string(qr_string, silent=False)
     except InvalidQueryStringException as e:
         return jsonify({
-            'message': e.__str__()
+            'message': str(e),
+            'code': http_errors_codes.INVALID_QUERY_STRING,
         }), 400
 
     model = QRString.query.filter(QRString.qr_string == qr_string).first()
     if model is not None:
         return jsonify({
-            'message': f'qr_string="{qr_string}" already exists'
+            'message': f'qr_string="{qr_string}" already exists',
+            'code': http_errors_codes.ALREADY_EXISTS,
+            'item': model
         }), 409
 
     model = QRString(qr_string=qr_string)
@@ -124,12 +133,14 @@ def patch_qr_string(id_):
         patch_json = request.get_json()
     except ValueError:
         return jsonify({
-            'message': 'Invalid json format.'
+            'message': 'Invalid json format.',
+            'code': http_errors_codes.INVALID_JSON_FORMAT,
         }), 400
 
     if not isinstance(patch_json, dict):
         return jsonify({
-            'message': 'Json must be object.'
+            'message': 'Json must be object.',
+            'code': http_errors_codes.INVALID_JSON_FORMAT,
         }), 400
 
     patch_json = {k: v for k, v in patch_json.items() if k not in ('created_at', 'updated_at')}
@@ -138,16 +149,20 @@ def patch_qr_string(id_):
         validator.is_valid_model_dict(patch_json, QRString)
     except validator.ValidatorBaseException as e:
         return jsonify({
-            'message': str(e)
+            'message': str(e),
+            'code': http_errors_codes.INVALID_MODEL_DATA,
         }), 400
 
     if 'qr_string' in patch_json:
-        if QRString.query.filter(
+        exist = QRString.query.filter(
             QRString.qr_string == patch_json['qr_string'],
             QRString.id != id_,
-        ).first() is not None:
+        ).first()
+        if exist is not None:
             return jsonify({
-                'message': f'qr_string="{patch_json["qr_string"]}" already exists.'
+                'message': f'qr_string="{patch_json["qr_string"]}" already exists.',
+                'code': http_errors_codes.ALREADY_EXISTS,
+                'item': exist,
             }), 409
 
     for field, value in patch_json.items():
@@ -210,13 +225,17 @@ def post_qr_string_image(id_: int):
     if len(request.files) == 0:
         return jsonify({
             'message': 'Files are required',
+            'code': http_errors_codes.FIELDS_REQUIRED,
+            'fields': ('file',)
         }), 400
 
     for file_storage in request.files.values():
         if file_storage.mimetype not in qr_string_images.VALID_MIME:
             return jsonify({
                 'message': f'{file_storage.mimetype} is invalid MIME type.'
-                           f' Allowed: {", ".join(qr_string_images.VALID_MIME)}'
+                           f' Allowed: {", ".join(qr_string_images.VALID_MIME)}',
+                'code': http_errors_codes.INVALID_MIME,
+                'valid': qr_string_images.VALID_MIME,
             }), 400
 
     target_dir = qr_string_images.get_path(id_)

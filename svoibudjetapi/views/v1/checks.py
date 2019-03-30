@@ -8,7 +8,11 @@ from flask import (
 
 from svoibudjetapi import app
 from svoibudjetapi.models import Check, Item
-from svoibudjetapi.support import generate_joins, get_eval_sort_by_rule
+from svoibudjetapi.support import (
+    generate_joins,
+    get_eval_sort_by_rule,
+    http_errors_codes,
+)
 
 
 @wraps(app.route)
@@ -27,7 +31,8 @@ def get_checks():
             sort_by_rule = get_eval_sort_by_rule(request.args['sort_by'], Check)
         except AttributeError:
             return jsonify({
-                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.'
+                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.',
+                'code': http_errors_codes.INVALID_SORT_KEY,
             }), 400
         queryset = queryset.order_by(sort_by_rule)
 
@@ -65,7 +70,8 @@ def get_check_items(id_: int):
             sort_by_rule = get_eval_sort_by_rule(request.args['sort_by'], Item)
         except AttributeError:
             return jsonify({
-                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.'
+                'message': f'Invalid value for sort_by. Must valid field name or field name with prefix -/+.',
+                'code': http_errors_codes.INVALID_SORT_KEY,
             }), 400
 
         queryset = queryset.order_by(sort_by_rule)
