@@ -46,6 +46,7 @@ class Shop(Model, Timestamps):
 
     products = db.relationship('Product', back_populates='shop')
     checks = db.relationship('Check', back_populates='shop')
+    failed_shop_name = db.relationship('FailedShopName', back_populates='shop', uselist=False)
 
     def __repr__(self):
         return f'<Shop(name="{self.name}",inn={self.inn})>'
@@ -143,3 +144,16 @@ class QRStringError(Model):
 
     def __repr__(self):
         return f'<QRStringError(qr_string_id={self.qr_string_id}, content="{self.content[:20]}...")>'
+
+
+class FailedShopName(Model, Timestamps):
+    __tablename__ = 'failed_shop_names'
+
+    id = db.Column(db.Integer, primary_key=True)
+    json = db.Column(db.JSON, nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id', ondelete='CASCADE'), nullable=False)
+
+    shop = db.relationship('Shop', back_populates='failed_shop_name', uselist=False)
+
+    def __repr__(self):
+        return f'<FailedShopName(shop_id={self.shop_id}")>'
