@@ -5,7 +5,7 @@ import time
 import requests
 
 from svoibudjetapi import app, db
-from svoibudjetapi.models import Shop
+from svoibudjetapi.models import Shop, FailedShopName
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +27,24 @@ class _CompanyNameGetter:
 
         try:
             r_data = response.json()
-            name = r_data['suggestions'][0]['value2']
+            name = r_data['suggestions'][0]['value']
         except:
             logger.warn('Api returned invalid format: %s', response.text)
-            raise
+            raise _InvalidDadataFormat(response.text)
         return name
+
+
+class _InvalidDadataFormat(Exception):
+    def __init__(self, text: str):
+        self.text = text
 
 
 @app.cli.command()
 def dadata():
     logger.debug('Start.')
-    queryset = Shop.query.filter(Shop.name.in_(('unknown', '')))
+    noname = Shop.name.in_(('unknown', '')) | Shop.name.is_(None)
+    nofailed = FailedShopName.id.is_(None)
+    queryset = Shop.query.outerjoin(Shop.failed_shop_name).filter(noname & nofailed)
     api = _CompanyNameGetter(app.config['DADATA_KEY'])
     while True:
         logger.debug('Iteration begin.')
@@ -58,6 +65,8 @@ def dadata():
                     try:
                         logger.debug('Getting name for %s id=%d', next_shop, next_shop.id)
                         next_shop.name = api.get_name(next_shop.inn)
+                    except _InvalidDadataFormat as e:
+                        next_shop.failed_shop_name = FailedShopName(json=e.text, shop_id=next_shop.id)
                     except:
                         logger.exception('get_name')
                         continue
