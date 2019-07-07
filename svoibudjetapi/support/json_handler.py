@@ -1,5 +1,4 @@
 import datetime
-import decimal
 import json
 import os
 import re
@@ -47,37 +46,41 @@ def save_check_from_json(json_string: str):
         shop=shop,
     )
 
-    for item in data['items']:
-        save_item(check, item)
+    save_items(check, data['items'])
 
     db.session.commit()
 
     return check
 
 
-def save_item(check, item_data):
-    item_data['name'] = item_data.get('name')
+def save_items(check, items_data):
+    unknown_count = None
+    name2product = {}
+    items = []
+    for item_data in items_data:
+        name = item_data.get('name')
 
-    if item_data['name'] is None:
-        item_data['name'] = 'unknown_{}'.format(
-            Product.query.filter(Product.shop == check.shop).count() + 1
+        if not name:
+            if unknown_count is None:
+                unknown_count = Product.query.filter(Product.shop == check.shop).count()
+            unknown_count += 1
+            name = 'unknown_{}'.format(unknown_count)
+
+        if name not in name2product:
+            product = Product.query.filter(
+                Product.name == name,
+                Product.shop == check.shop,
+            ).first()
+
+            name2product[name] = product or Product(shop=check.shop, name=name)
+
+        item = Item(
+            check=check,
+            product=name2product[name],
+            price=item_data['price'] / 100,
+            quantity=item_data['quantity'],
+            sum=item_data['sum'] / 100,
         )
-        product = None
-    else:
-        product = Product.query.filter(
-            Product.name == item_data['name'],
-            Product.shop == check.shop,
-        ).first()
 
-    if product is None:
-        product = Product(shop=check.shop, name=item_data['name'])
-
-    item = Item(
-        check=check,
-        product=product,
-        price=item_data['price'] / 100,
-        quantity=item_data['quantity'],
-        sum=item_data['sum'] / 100,
-    )
-
-    return item
+        items.append(item)
+    return items
