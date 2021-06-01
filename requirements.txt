@@ -10,7 +10,7 @@ MarkupSafe==1.0
 mysqlclient==1.3.13
 requests==2.20.0
 SQLAlchemy==1.2.12
-urllib3==1.24.1
+urllib3==1.26.5
 Werkzeug==0.14.1
 git+https://github.com/oman36/proverkacheka.git
 Flask-Migrate==2.4.0
